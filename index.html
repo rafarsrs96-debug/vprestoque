@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#5b21b6" />
+  <title>VPR Motors | Estoque</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --bg:#12051f;
+      --bg2:#1c0a31;
+      --surface:#25103d;
+      --surface2:#311553;
+      --surface3:#3a1a61;
+      --text:#ffffff;
+      --muted:#cabce1;
+      --line:rgba(255,255,255,.12);
+      --purple:#8b5cf6;
+      --purple2:#a855f7;
+      --purple3:#c084fc;
+      --purple4:#6d28d9;
+      --danger:#ef4444;
+      --success:#22c55e;
+      --shadow:0 18px 55px rgba(0,0,0,.30);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:Inter,Segoe UI,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 15% 10%,rgba(168,85,247,.18),transparent 22%),
+        radial-gradient(circle at 85% 15%,rgba(139,92,246,.14),transparent 24%),
+        linear-gradient(180deg,var(--bg),#160722 45%,#100319);
+      min-height:100vh;
+    }
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    img{display:block}
+    .hidden{display:none!important}
+    .container{width:min(1180px,92%);margin-inline:auto}
+    .muted{color:var(--muted)}
+    .site-header{
+      background:rgba(26,8,45,.88);
+      color:#fff;
+      position:sticky;top:0;z-index:30;
+      border-bottom:1px solid rgba(255,255,255,.09);
+      backdrop-filter:blur(16px);
+    }
+    .nav{min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#fff}
+    .brand-mark{
+      width:46px;height:46px;border-radius:14px;display:grid;place-items:center;
+      background:linear-gradient(135deg,#7c3aed,#c084fc);
+      font-weight:950;letter-spacing:-2px;font-size:17px;
+      box-shadow:0 10px 28px rgba(139,92,246,.35);
+    }
+    .brand-copy strong{display:block;font-size:18px;letter-spacing:.08em}
+    .brand-copy span{display:block;font-size:10px;color:#d8c8ee;letter-spacing:.22em;margin-top:2px}
+    .nav-links{display:flex;align-items:center;gap:28px}
+    .nav-links a{color:#e8dcf8;text-decoration:none;font-size:14px;font-weight:750}
+    .nav-links a:hover{color:#fff}
+    .nav-actions{display:flex;gap:10px;align-items:center}
+    .btn{
+      border:0;border-radius:12px;padding:11px 16px;font-weight:800;
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      transition:.2s;text-decoration:none;
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn-primary{
+      background:linear-gradient(135deg,var(--purple4),var(--purple2));
+      color:#fff;box-shadow:0 9px 25px rgba(139,92,246,.3)
+    }
+    .btn-dark{background:#2b1246;color:#fff;border:1px solid var(--line)}
+    .btn-light{background:#fff;color:#4c1d95}
+    .btn-outline{background:transparent;border:1px solid rgba(255,255,255,.18);color:#fff}
+    .btn-danger{background:#49142a;color:#fecaca;border:1px solid rgba(239,68,68,.25)}
+    .hero{position:relative;overflow:hidden;min-height:500px;display:flex;align-items:center}
+    .hero:before{
+      content:"";position:absolute;inset:0;
+      background:
+        radial-gradient(circle at 78% 42%,rgba(168,85,247,.48),transparent 29%),
+        radial-gradient(circle at 86% 20%,rgba(255,255,255,.07),transparent 18%),
+        linear-gradient(115deg,#18072a 5%,#2b0f4b 55%,#48177b 100%);
+    }
+    .hero:after{
+      content:"VPR";position:absolute;right:-30px;bottom:-100px;
+      font-size:360px;line-height:1;font-weight:950;letter-spacing:-.09em;
+      color:rgba(255,255,255,.035);pointer-events:none;
+    }
+    .hero-inner{position:relative;z-index:2;display:grid;grid-template-columns:1.15fr .85fr;align-items:center;gap:42px;padding:72px 0 98px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;color:#e9d5ff;font-weight:850;text-transform:uppercase;font-size:12px;letter-spacing:.18em;margin-bottom:18px}
+    .eyebrow:before{content:"";width:34px;height:2px;background:var(--purple3)}
+    .hero h1{font-size:clamp(42px,6vw,76px);letter-spacing:-.055em;line-height:.96;margin:0 0 22px;max-width:720px}
+    .hero h1 span{color:#d8b4fe}
+    .hero p{font-size:17px;line-height:1.7;color:#ddcfee;max-width:610px;margin:0 0 28px}
+    .hero-actions{display:flex;gap:12px;flex-wrap:wrap}
+    .hero-side{display:grid;gap:14px}
+    .hero-stat{
+      padding:22px 24px;border-radius:18px;
+      background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.055));
+      border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(10px)
+    }
+    .hero-stat span{color:#decff0;font-size:13px}
+    .hero-stat strong{display:block;font-size:30px;margin-top:5px;letter-spacing:-.04em}
+    .live-pill{
+      display:inline-flex;align-items:center;gap:8px;padding:8px 11px;border-radius:999px;
+      background:rgba(34,197,94,.13);border:1px solid rgba(34,197,94,.25);color:#bbf7d0;
+      font-size:12px;font-weight:800;margin-top:10px
+    }
+    .live-dot{width:8px;height:8px;border-radius:999px;background:#22c55e;box-shadow:0 0 0 5px rgba(34,197,94,.10)}
+    .search-wrap{position:relative;z-index:5;margin-top:-40px}
+    .search-box{
+      background:linear-gradient(180deg,#2a1048,#220c3c);
+      border-radius:20px;box-shadow:0 22px 65px rgba(0,0,0,.32);
+      padding:18px;border:1px solid rgba(255,255,255,.12);
+      display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:12px
+    }
+    .field{display:flex;flex-direction:column;gap:7px}
+    .field label{font-size:12px;color:#d9c8eb;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+    .input{
+      width:100%;border:1px solid rgba(255,255,255,.14);background:#321652;
+      border-radius:11px;padding:12px 13px;color:#fff;outline:none;transition:.2s
+    }
+    .input::placeholder{color:#ad9abc}
+    .input:focus{border-color:#c084fc;box-shadow:0 0 0 3px rgba(192,132,252,.14)}
+    option{background:#281142;color:#fff}
+    .search-button{align-self:end;height:45px;padding-inline:22px}
+    .section{padding:60px 0 78px}
+    .section-head{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:24px}
+    .section-kicker{font-size:12px;color:#c084fc;text-transform:uppercase;font-weight:900;letter-spacing:.16em;margin-bottom:7px}
+    .section h2{font-size:34px;letter-spacing:-.04em;margin:0}
+    .result-count{font-size:14px;color:var(--muted)}
+    .car-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+    .car-card{
+      background:linear-gradient(180deg,#291247,#1f0b37);
+      border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.10);
+      box-shadow:0 14px 38px rgba(0,0,0,.22);transition:.23s
+    }
+    .car-card:hover{transform:translateY(-4px);border-color:rgba(192,132,252,.38);box-shadow:0 20px 50px rgba(0,0,0,.34)}
+    .car-media{position:relative;height:235px;background:#1b0b2c;overflow:hidden}
+    .car-image{width:100%;height:100%;object-fit:cover;transition:.35s}
+    .car-card:hover .car-image{transform:scale(1.025)}
+    .stock-tag{position:absolute;left:14px;top:14px;background:rgba(34,197,94,.92);color:#fff;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:900;box-shadow:0 5px 18px rgba(0,0,0,.20)}
+    .car-body{padding:19px}
+    .car-brand{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:#c084fc;font-weight:900;margin-bottom:6px}
+    .car-title{margin:0;font-size:19px;line-height:1.25;letter-spacing:-.025em}
+    .car-meta{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;color:#ddcfee;font-size:13px}
+    .meta-chip{background:#351652;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px 9px}
+    .price-row{display:flex;align-items:end;justify-content:space-between;gap:10px;border-top:1px solid rgba(255,255,255,.09);padding-top:16px;margin-top:2px}
+    .price small{display:block;color:#bba8d0;font-size:11px;font-weight:700;margin-bottom:2px}
+    .price strong{font-size:24px;letter-spacing:-.04em}
+    .car-btn{padding:10px 13px;font-size:13px}
+    .empty{grid-column:1/-1;text-align:center;background:#24103d;border:1px dashed rgba(255,255,255,.18);padding:52px;border-radius:17px;color:#d4c2e8}
+    .feature-band{background:#1a082c;color:#fff;padding:56px 0;border-top:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.07)}
+    .features{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .feature{padding:22px;border:1px solid rgba(255,255,255,.10);border-radius:15px;background:#271142}
+    .feature b{display:block;margin:9px 0 6px;font-size:17px}
+    .feature span{color:#cbbadd;font-size:13px;line-height:1.55}
+    .feature-icon{width:40px;height:40px;border-radius:10px;background:rgba(192,132,252,.15);color:#e9d5ff;display:grid;place-items:center;font-size:18px}
+    footer{background:#10031a;color:#ad9abc;padding:26px 0;border-top:1px solid rgba(255,255,255,.08)}
+    .footer-inner{display:flex;justify-content:space-between;gap:20px;align-items:center;font-size:13px}
+    #adminPage{min-height:100vh;background:linear-gradient(180deg,#140521,#1b082c)}
+    .admin-layout{display:grid;grid-template-columns:255px 1fr;min-height:calc(100vh - 76px)}
+    .sidebar{background:#1b082e;color:#fff;padding:24px 16px;border-right:1px solid rgba(255,255,255,.08)}
+    .sidebar-label{font-size:10px;color:#a78fbf;text-transform:uppercase;letter-spacing:.14em;margin:0 10px 12px}
+    .side-btn{width:100%;border:0;background:transparent;color:#d7c6e8;text-align:left;padding:12px;border-radius:10px;font-weight:750;margin-bottom:5px}
+    .side-btn:hover,.side-btn.active{background:#321552;color:#fff}
+    .admin-main{padding:30px}
+    .admin-header{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:22px}
+    .admin-header h1{margin:0;font-size:30px;letter-spacing:-.04em}
+    .admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+    .panel{background:#25103e;border:1px solid rgba(255,255,255,.10);border-radius:15px;box-shadow:0 8px 30px rgba(0,0,0,.20)}
+    .mini{padding:20px}
+    .mini span{color:#baa6cf;font-size:12px;font-weight:700}
+    .mini strong{display:block;font-size:30px;margin-top:5px}
+    .table-panel{padding:0;overflow:hidden}
+    .table-wrap{overflow:auto}
+    table{border-collapse:collapse;width:100%;min-width:850px}
+    th,td{text-align:left;padding:14px;border-bottom:1px solid rgba(255,255,255,.08);vertical-align:middle}
+    th{background:#2d124c;color:#cab7dc;text-transform:uppercase;font-size:10px;letter-spacing:.08em}
+    .thumb{width:76px;height:52px;border-radius:8px;object-fit:cover;background:#1e0c32}
+    .vehicle-cell{display:flex;align-items:center;gap:12px}
+    .table-actions{display:flex;gap:7px}.small{padding:8px 10px;font-size:12px}
+    .status-select{min-width:118px}
+    .overlay,.modal{position:fixed;inset:0;background:rgba(10,2,16,.82);display:grid;place-items:center;padding:18px;z-index:70;backdrop-filter:blur(7px)}
+    .login-card,.modal-card{background:#261040;border-radius:18px;border:1px solid rgba(255,255,255,.11);box-shadow:0 25px 70px rgba(0,0,0,.42)}
+    .login-card{width:min(420px,100%);padding:26px}
+    .login-card h2{margin:0 0 7px}.login-card p{margin:0 0 19px;color:#c8b8da;line-height:1.5}
+    .login-actions{display:flex;justify-content:space-between;gap:10px;margin-top:18px}
+    .error{color:#fecaca;font-size:13px;font-weight:800;margin-top:9px}
+    .modal-card{width:min(760px,100%);padding:22px;max-height:92vh;overflow:auto}
+    .modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .modal-head h3{margin:0;font-size:22px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+    .full{grid-column:1/-1}
+    .preview{width:100%;height:240px;object-fit:cover;border-radius:13px;background:#1e0c31;border:1px solid rgba(255,255,255,.09)}
+    .sync-status{font-size:12px;font-weight:800;color:#bbf7d0;margin-top:6px}
+    @media(max-width:960px){
+      .nav-links{display:none}
+      .hero-inner{grid-template-columns:1fr;padding:58px 0 90px}.hero-side{grid-template-columns:1fr 1fr}
+      .search-box{grid-template-columns:1fr 1fr}.search-button{grid-column:1/-1}
+      .car-grid{grid-template-columns:repeat(2,1fr)}
+      .admin-layout{grid-template-columns:1fr}.sidebar{display:none}
+    }
+    @media(max-width:650px){
+      .nav{height:auto;min-height:70px;padding:12px 0}.brand-copy span{display:none}.nav-actions .btn-dark{display:none}
+      .hero{min-height:auto}.hero-inner{padding:50px 0 84px}.hero h1{font-size:44px}.hero-side{grid-template-columns:1fr}.hero-stat{padding:17px}
+      .search-box{grid-template-columns:1fr;padding:14px}.search-button{grid-column:auto;width:100%}
+      .section{padding:44px 0 58px}.section-head{align-items:flex-start;flex-direction:column}.section h2{font-size:28px}
+      .car-grid,.features,.admin-stats,.form-grid{grid-template-columns:1fr}.full{grid-column:auto}
+      .admin-main{padding:18px}.admin-header{align-items:flex-start;flex-direction:column}.footer-inner{flex-direction:column;align-items:flex-start}
+      .car-media{height:220px}
+    }
+  </style>
+</head>
+<body>
+  <div id="publicPage">
+    <header class="site-header">
+      <div class="container nav">
+        <a class="brand" href="#inicio">
+          <div class="brand-mark">VPR</div>
+          <div class="brand-copy"><strong>VPR MOTORS</strong><span>ESTOQUE COMPARTILHADO</span></div>
+        </a>
+        <nav class="nav-links">
+          <a href="#inicio">Início</a>
+          <a href="#estoque">Estoque</a>
+          <a href="#diferenciais">Sistema</a>
+        </nav>
+        <div class="nav-actions">
+          <a class="btn btn-dark" href="#estoque">Ver estoque</a>
+          <button class="btn btn-primary" onclick="openAdminLogin()">Área administrativa</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="hero" id="inicio">
+      <div class="container hero-inner">
+        <div>
+          <div class="eyebrow">VPR Motors</div>
+          <h1>Estoque <span>sincronizado</span> para toda a equipe.</h1>
+          <p>Consulte os veículos disponíveis em tempo real. Quando um carro é adicionado, alterado ou removido, todos os vendedores recebem a atualização automaticamente.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#estoque">Ver veículos</a>
+            <button class="btn btn-outline" onclick="openAdminLogin()">Gerenciar estoque</button>
+          </div>
+          <div class="live-pill"><span class="live-dot"></span><span id="realtimeStatus">Conectando ao estoque...</span></div>
+        </div>
+        <div class="hero-side">
+          <div class="hero-stat"><span>Veículos disponíveis</span><strong id="publicAvailable">0</strong></div>
+          <div class="hero-stat"><span>Faixa de preço</span><strong id="publicRange">—</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="container search-wrap">
+      <div class="search-box">
+        <div class="field"><label>Buscar veículo</label><input id="searchInput" class="input" placeholder="Marca, modelo ou ano..." oninput="renderPublic()" /></div>
+        <div class="field"><label>Marca</label><select id="brandFilter" class="input" onchange="renderPublic()"><option value="">Todas</option></select></div>
+        <div class="field"><label>Preço</label>
+          <select id="priceFilter" class="input" onchange="renderPublic()">
+            <option value="">Qualquer preço</option>
+            <option value="50000">Até R$ 50 mil</option>
+            <option value="80000">Até R$ 80 mil</option>
+            <option value="120000">Até R$ 120 mil</option>
+            <option value="9999999">Acima de R$ 120 mil</option>
+          </select>
+        </div>
+        <button class="btn btn-primary search-button" onclick="renderPublic()">Buscar</button>
+      </div>
+    </div>
+
+    <section class="section" id="estoque">
+      <div class="container">
+        <div class="section-head">
+          <div><div class="section-kicker">VPR Motors</div><h2>Estoque disponível</h2></div>
+          <div class="result-count" id="resultCount"></div>
+        </div>
+        <div id="carGrid" class="car-grid"></div>
+      </div>
+    </section>
+
+    <section class="feature-band" id="diferenciais">
+      <div class="container features">
+        <div class="feature"><div class="feature-icon">⚡</div><b>Atualização em tempo real</b><span>Alterações feitas no estoque aparecem automaticamente para os outros vendedores.</span></div>
+        <div class="feature"><div class="feature-icon">☁️</div><b>Banco de dados online</b><span>Os veículos ficam salvos na nuvem, não apenas no navegador de uma pessoa.</span></div>
+        <div class="feature"><div class="feature-icon">🟣</div><b>Painel VPR</b><span>Interface roxa e painel centralizado para editar, vender ou remover veículos.</span></div>
+      </div>
+    </section>
+
+    <footer><div class="container footer-inner"><strong>VPR Motors</strong><span>Estoque compartilhado para equipe de vendas</span></div></footer>
+  </div>
+
+  <div id="adminPage" class="hidden">
+    <header class="site-header">
+      <div class="container nav">
+        <a class="brand" href="javascript:void(0)">
+          <div class="brand-mark">VPR</div>
+          <div class="brand-copy"><strong>VPR MOTORS</strong><span>ADMIN</span></div>
+        </a>
+        <div class="nav-actions">
+          <button class="btn btn-dark" onclick="goPublic()">Ver site</button>
+          <button class="btn btn-light" onclick="logout()">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="admin-layout">
+      <aside class="sidebar">
+        <div class="sidebar-label">Gerenciamento</div>
+        <button class="side-btn active">Estoque</button>
+        <button class="side-btn" onclick="openVehicleModal()">+ Adicionar veículo</button>
+      </aside>
+
+      <main class="admin-main">
+        <div class="admin-header">
+          <div>
+            <h1>Painel de estoque</h1>
+            <div class="muted">Qualquer alteração será sincronizada com os outros vendedores.</div>
+            <div class="sync-status" id="adminSyncStatus">● Banco conectado</div>
+          </div>
+          <button class="btn btn-primary" onclick="openVehicleModal()">+ Adicionar veículo</button>
+        </div>
+
+        <section class="admin-stats">
+          <div class="panel mini"><span>Total no estoque</span><strong id="adminTotal">0</strong></div>
+          <div class="panel mini"><span>Disponíveis</span><strong id="adminAvailable">0</strong></div>
+          <div class="panel mini"><span>Vendidos</span><strong id="adminSold">0</strong></div>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Veículo</th><th>Ano</th><th>Preço</th><th>KM</th><th>Status</th><th>Ações</th></tr></thead>
+              <tbody id="adminTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="loginOverlay" class="overlay hidden">
+    <div class="login-card">
+      <h2>Acesso administrativo</h2>
+      <p>Entre para adicionar, editar ou remover veículos do estoque compartilhado.</p>
+      <div class="field"><label>Usuário</label><input id="loginUser" class="input" autocomplete="username" /></div>
+      <div class="field" style="margin-top:12px"><label>Senha</label><input id="loginPass" class="input" type="password" autocomplete="current-password" /></div>
+      <div id="loginError" class="error hidden">Usuário ou senha incorretos.</div>
+      <div class="login-actions"><button class="btn btn-outline" onclick="closeAdminLogin()">Cancelar</button><button class="btn btn-primary" onclick="login()">Entrar</button></div>
+    </div>
+  </div>
+
+  <div id="vehicleModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head"><div><h3 id="modalTitle">Adicionar veículo</h3><div class="muted">Salvo no banco online da VPR Motors.</div></div><button class="btn btn-outline" onclick="closeVehicleModal()">✕</button></div>
+      <form id="vehicleForm" onsubmit="saveVehicle(event)">
+        <input type="hidden" id="vehicleId" />
+        <div class="form-grid">
+          <div class="field"><label>Marca</label><input id="brand" class="input" required placeholder="Ex.: Jeep" /></div>
+          <div class="field"><label>Modelo</label><input id="model" class="input" required placeholder="Ex.: Renegade Longitude" /></div>
+          <div class="field"><label>Ano</label><input id="year" class="input" type="number" min="1950" max="2100" required /></div>
+          <div class="field"><label>Quilometragem</label><input id="km" class="input" type="number" min="0" required /></div>
+          <div class="field"><label>Preço (R$)</label><input id="price" class="input" type="number" min="0" step="100" required /></div>
+          <div class="field"><label>Status</label><select id="status" class="input"><option value="available">Disponível</option><option value="sold">Vendido</option></select></div>
+          <div class="field full"><label>Imagem por URL</label><input id="imageUrl" class="input" placeholder="https://..." oninput="updatePreview()" /></div>
+          <div class="field full"><label>Ou envie uma imagem</label><input id="imageFile" class="input" type="file" accept="image/*" onchange="handleImageUpload(event)" /><small class="muted">Para melhor desempenho, prefira imagens menores que 1 MB.</small></div>
+          <div class="field full"><label>Observações</label><textarea id="notes" class="input" rows="3" placeholder="Ex.: completo, revisado, único dono..."></textarea></div>
+          <div class="full"><img id="imagePreview" class="preview" alt="Prévia da imagem" /></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px"><button type="button" class="btn btn-outline" onclick="closeVehicleModal()">Cancelar</button><button type="submit" class="btn btn-primary" id="saveButton">Salvar veículo</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="detailsModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head"><h3 id="detailsTitle"></h3><button class="btn btn-outline" onclick="closeDetails()">✕</button></div>
+      <img id="detailsImage" class="preview" style="margin-top:14px;height:340px" />
+      <div id="detailsInfo" style="margin-top:17px"></div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://tmysyorqxbamhjbquqhv.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_VfdIWE5Lo0cjoFq3t0Pwvg_kHqoeLv2";
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const fallbackImage = "https://images.unsplash.com/photo-1493238792000-8113da705763?auto=format&fit=crop&w=1200&q=80";
+    let vehicles = [];
+    let uploadedImageData = "";
+    let adminCredentials = null;
+
+    function money(v){return Number(v).toLocaleString("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0})}
+    function km(v){return Number(v).toLocaleString("pt-BR")+" km"}
+    function escapeHtml(s=""){return String(s ?? "").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+
+    async function loadVehicles(){
+      const {data,error}=await db.from("vpr_vehicles").select("*").order("created_at",{ascending:false});
+      if(error){
+        console.error(error);
+        document.getElementById("realtimeStatus").textContent="Erro ao carregar estoque";
+        document.getElementById("adminSyncStatus").textContent="● Erro de conexão";
+        return;
+      }
+      vehicles=data||[];
+      renderAll();
+    }
+
+    function subscribeRealtime(){
+      db.channel("vpr-stock-live")
+        .on("postgres_changes",{event:"*",schema:"public",table:"vpr_vehicles"},()=>{
+          loadVehicles();
+        })
+        .subscribe(status=>{
+          const ok=status==="SUBSCRIBED";
+          document.getElementById("realtimeStatus").textContent=ok?"Estoque sincronizado em tempo real":"Conectando ao estoque...";
+          document.getElementById("adminSyncStatus").textContent=ok?"● Sincronização em tempo real ativa":"● Conectando...";
+        });
+    }
+
+    function renderPublic(){
+      const all=vehicles.filter(v=>v.status==="available");
+      const q=document.getElementById("searchInput").value.trim().toLowerCase();
+      const brand=document.getElementById("brandFilter").value;
+      const pf=document.getElementById("priceFilter").value;
+      let filtered=all.filter(v=>{
+        const txt=`${v.brand} ${v.model} ${v.year}`.toLowerCase();
+        if(q&&!txt.includes(q))return false;
+        if(brand&&v.brand!==brand)return false;
+        if(pf){
+          const limit=Number(pf);
+          if(limit===9999999){if(Number(v.price)<=120000)return false}
+          else if(Number(v.price)>limit)return false
+        }
+        return true
+      });
+      const grid=document.getElementById("carGrid");
+      document.getElementById("resultCount").textContent=`${filtered.length} veículo(s) encontrado(s)`;
+      grid.innerHTML=filtered.length?filtered.map(v=>`
+        <article class="car-card">
+          <div class="car-media">
+            <img class="car-image" src="${escapeHtml(v.image||fallbackImage)}" onerror="this.src='${fallbackImage}'" alt="${escapeHtml(v.brand+' '+v.model)}">
+            <div class="stock-tag">DISPONÍVEL</div>
+          </div>
+          <div class="car-body">
+            <div class="car-brand">${escapeHtml(v.brand)}</div>
+            <h3 class="car-title">${escapeHtml(v.model)}</h3>
+            <div class="car-meta"><span class="meta-chip">Ano ${escapeHtml(v.year)}</span><span class="meta-chip">${km(v.km)}</span></div>
+            <div class="price-row"><div class="price"><small>Preço</small><strong>${money(v.price)}</strong></div><button class="btn btn-primary car-btn" onclick="showDetails('${v.id}')">Ver detalhes</button></div>
+          </div>
+        </article>`).join(""):`<div class="empty"><strong>Nenhum veículo encontrado.</strong><br>Ajuste os filtros ou cadastre novos veículos no painel.</div>`;
+      document.getElementById("publicAvailable").textContent=all.length;
+      if(all.length){
+        const prices=all.map(v=>Number(v.price));
+        document.getElementById("publicRange").textContent=`${money(Math.min(...prices))} — ${money(Math.max(...prices))}`;
+      }else document.getElementById("publicRange").textContent="—";
+      populateBrands();
+    }
+
+    function populateBrands(){
+      const select=document.getElementById("brandFilter");
+      const current=select.value;
+      const brands=[...new Set(vehicles.filter(v=>v.status==="available").map(v=>v.brand))].sort();
+      select.innerHTML='<option value="">Todas</option>'+brands.map(b=>`<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join("");
+      select.value=current;
+    }
+
+    function showDetails(id){
+      const v=vehicles.find(x=>x.id===id); if(!v)return;
+      document.getElementById("detailsTitle").textContent=`${v.brand} ${v.model}`;
+      const img=document.getElementById("detailsImage"); img.src=v.image||fallbackImage; img.onerror=()=>img.src=fallbackImage;
+      document.getElementById("detailsInfo").innerHTML=`
+        <div class="car-brand">${escapeHtml(v.brand)}</div>
+        <div class="car-meta"><span class="meta-chip">Ano ${escapeHtml(v.year)}</span><span class="meta-chip">${km(v.km)}</span></div>
+        <div class="price" style="margin:12px 0"><small>Preço</small><strong>${money(v.price)}</strong></div>
+        <p style="color:#d4c2e8;line-height:1.6">${escapeHtml(v.notes||"Sem observações cadastradas.")}</p>`;
+      document.getElementById("detailsModal").classList.remove("hidden")
+    }
+    function closeDetails(){document.getElementById("detailsModal").classList.add("hidden")}
+
+    function openAdminLogin(){
+      document.getElementById("loginOverlay").classList.remove("hidden");
+      setTimeout(()=>document.getElementById("loginUser").focus(),50)
+    }
+    function closeAdminLogin(){
+      document.getElementById("loginOverlay").classList.add("hidden");
+      document.getElementById("loginError").classList.add("hidden")
+    }
+
+    async function login(){
+      const user=document.getElementById("loginUser").value.trim();
+      const pass=document.getElementById("loginPass").value;
+      document.getElementById("loginError").classList.add("hidden");
+      const {data,error}=await db.rpc("vpr_check_admin",{p_user:user,p_pass:pass});
+      if(error||data!==true){
+        document.getElementById("loginError").classList.remove("hidden");
+        return;
+      }
+      adminCredentials={user,pass};
+      sessionStorage.setItem("vpr_admin_user",user);
+      sessionStorage.setItem("vpr_admin_pass",pass);
+      closeAdminLogin();
+      openAdmin();
+    }
+
+    function openAdmin(){
+      document.getElementById("publicPage").classList.add("hidden");
+      document.getElementById("adminPage").classList.remove("hidden");
+      renderAdmin(); window.scrollTo(0,0)
+    }
+    function goPublic(){
+      document.getElementById("adminPage").classList.add("hidden");
+      document.getElementById("publicPage").classList.remove("hidden");
+      renderPublic(); window.scrollTo(0,0)
+    }
+    function logout(){
+      adminCredentials=null;
+      sessionStorage.removeItem("vpr_admin_user");
+      sessionStorage.removeItem("vpr_admin_pass");
+      goPublic()
+    }
+
+    function renderAdmin(){
+      const list=vehicles;
+      document.getElementById("adminTotal").textContent=list.length;
+      document.getElementById("adminAvailable").textContent=list.filter(v=>v.status==="available").length;
+      document.getElementById("adminSold").textContent=list.filter(v=>v.status==="sold").length;
+      const tbody=document.getElementById("adminTable");
+      tbody.innerHTML=list.length?list.map(v=>`
+        <tr>
+          <td><div class="vehicle-cell"><img class="thumb" src="${escapeHtml(v.image||fallbackImage)}" onerror="this.src='${fallbackImage}'"><div><strong>${escapeHtml(v.brand)} ${escapeHtml(v.model)}</strong><br><span class="muted" style="font-size:12px">${escapeHtml(v.notes||"")}</span></div></div></td>
+          <td>${escapeHtml(v.year)}</td>
+          <td><strong>${money(v.price)}</strong></td>
+          <td>${km(v.km)}</td>
+          <td><select class="input status-select" onchange="quickStatus('${v.id}',this.value)"><option value="available" ${v.status==="available"?"selected":""}>Disponível</option><option value="sold" ${v.status==="sold"?"selected":""}>Vendido</option></select></td>
+          <td><div class="table-actions"><button class="btn btn-outline small" onclick="editVehicle('${v.id}')">Editar</button><button class="btn btn-danger small" onclick="deleteVehicle('${v.id}')">Excluir</button></div></td>
+        </tr>`).join(""):'<tr><td colspan="6" class="muted">Nenhum veículo cadastrado.</td></tr>'
+    }
+
+    async function quickStatus(id,status){
+      const {error}=await db.from("vpr_vehicles").update({status}).eq("id",id);
+      if(error){alert("Não foi possível alterar o status.");console.error(error);await loadVehicles()}
+    }
+
+    async function deleteVehicle(id){
+      const v=vehicles.find(x=>x.id===id); if(!v)return;
+      if(!confirm(`Excluir ${v.brand} ${v.model} do estoque para todos os vendedores?`))return;
+      const {error}=await db.from("vpr_vehicles").delete().eq("id",id);
+      if(error){alert("Não foi possível excluir o veículo.");console.error(error)}
+    }
+
+    function openVehicleModal(){
+      uploadedImageData="";
+      document.getElementById("modalTitle").textContent="Adicionar veículo";
+      document.getElementById("vehicleForm").reset();
+      document.getElementById("vehicleId").value="";
+      document.getElementById("status").value="available";
+      document.getElementById("imagePreview").src=fallbackImage;
+      document.getElementById("vehicleModal").classList.remove("hidden")
+    }
+
+    function editVehicle(id){
+      const v=vehicles.find(x=>x.id===id); if(!v)return;
+      uploadedImageData="";
+      document.getElementById("modalTitle").textContent="Editar veículo";
+      document.getElementById("vehicleId").value=v.id;
+      document.getElementById("brand").value=v.brand;
+      document.getElementById("model").value=v.model;
+      document.getElementById("year").value=v.year;
+      document.getElementById("km").value=v.km;
+      document.getElementById("price").value=v.price;
+      document.getElementById("status").value=v.status;
+      document.getElementById("imageUrl").value=v.image&&!v.image.startsWith("data:")?v.image:"";
+      document.getElementById("notes").value=v.notes||"";
+      document.getElementById("imagePreview").src=v.image||fallbackImage;
+      document.getElementById("vehicleModal").classList.remove("hidden")
+    }
+
+    function closeVehicleModal(){document.getElementById("vehicleModal").classList.add("hidden")}
+    function updatePreview(){const url=document.getElementById("imageUrl").value.trim();document.getElementById("imagePreview").src=url||fallbackImage}
+    function handleImageUpload(event){
+      const file=event.target.files[0]; if(!file)return;
+      if(file.size>1500000){alert("Use uma imagem menor que 1,5 MB para evitar lentidão.");event.target.value="";return}
+      const reader=new FileReader();
+      reader.onload=e=>{uploadedImageData=e.target.result;document.getElementById("imagePreview").src=uploadedImageData};
+      reader.readAsDataURL(file)
+    }
+
+    async function saveVehicle(e){
+      e.preventDefault();
+      const btn=document.getElementById("saveButton");
+      btn.disabled=true; btn.textContent="Salvando...";
+      try{
+        const id=document.getElementById("vehicleId").value;
+        const existing=vehicles.find(v=>v.id===id);
+        const imageUrl=document.getElementById("imageUrl").value.trim();
+        const vehicle={
+          brand:document.getElementById("brand").value.trim(),
+          model:document.getElementById("model").value.trim(),
+          year:Number(document.getElementById("year").value),
+          km:Number(document.getElementById("km").value),
+          price:Number(document.getElementById("price").value),
+          status:document.getElementById("status").value,
+          image:uploadedImageData||imageUrl||(existing?existing.image:fallbackImage),
+          notes:document.getElementById("notes").value.trim()
+        };
+        let result;
+        if(id) result=await db.from("vpr_vehicles").update(vehicle).eq("id",id);
+        else result=await db.from("vpr_vehicles").insert(vehicle);
+        if(result.error) throw result.error;
+        closeVehicleModal();
+        await loadVehicles();
+      }catch(err){
+        console.error(err);
+        alert("Não foi possível salvar o veículo no banco.");
+      }finally{
+        btn.disabled=false; btn.textContent="Salvar veículo";
+      }
+    }
+
+    function renderAll(){renderPublic();renderAdmin()}
+
+    window.addEventListener("DOMContentLoaded",async()=>{
+      const u=sessionStorage.getItem("vpr_admin_user");
+      const p=sessionStorage.getItem("vpr_admin_pass");
+      if(u&&p)adminCredentials={user:u,pass:p};
+      await loadVehicles();
+      subscribeRealtime();
+      if(adminCredentials)openAdmin();
+      document.getElementById("loginPass").addEventListener("keydown",e=>{if(e.key==="Enter")login()});
+      document.getElementById("loginUser").addEventListener("keydown",e=>{if(e.key==="Enter")login()});
+    });
+  </script>
+</body>
+</html>
